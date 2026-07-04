@@ -1,0 +1,21 @@
+# サービス全体を起動するための設定ファイル
+version: '3.8'
+
+services:
+  # REST API サーバー
+  api:
+    build: ./api
+    ports:
+      - "8000:8000" # ブラウザ(JS)からアクセスするポート
+    volumes:
+      # 【重要】ホストマシンのDockerリモコンをAPIコンテナに共有する (DooD)
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - runner-base
+
+  # 実行用コンテナの「型（イメージ）」を事前にビルドしておくためのダミー設定
+  runner-base:
+    build: ./runner
+    image: my-judge-runner:latest
+    # 起動し続ける必要はないので何もしない
+    command: ["true"]
