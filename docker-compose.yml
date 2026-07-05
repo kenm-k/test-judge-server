@@ -1,21 +1,36 @@
-# サービス全体を起動するための設定ファイル
 version: '3.8'
 
 services:
-  # REST API サーバー
+  # 追加: 自動HTTPS化リバースプロキシ
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
   api:
     build: ./api
-    ports:
-      - "8000:8000" # ブラウザ(JS)からアクセスするポート
+    # ports: "8000:8000" は削除（外部に直接公開しないため）
+    expose:
+      - "8000" # Docker内部のネットワーク(Caddy)からのみ見えるようにする
     volumes:
-      # 【重要】ホストマシンのDockerリモコンをAPIコンテナに共有する (DooD)
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - runner-base
 
-  # 実行用コンテナの「型（イメージ）」を事前にビルドしておくためのダミー設定
   runner-base:
     build: ./runner
     image: my-judge-runner:latest
-    # 起動し続ける必要はないので何もしない
     command: ["true"]
+
+# 証明書データを消えないように保存する領域
+volumes:
+  caddy_data:
+  caddy_config:
